@@ -1,0 +1,228 @@
+myshell: a simple shell
+Author: Sushant Kumar Singh, 2016103
+HOW TO RUN: 
+	1.	go to dir src, run terminal
+	2. 	type command "make" on terminal
+	3. 	type command "make run" on terminal
+
+(NOTE: Ubuntu docs referred for documentation)
+
+commands supported:
+	Internal: exit, echo, history, pwd, cd
+	External: ls, cat, date, rm, mkdir
+
+Assumptions:
+	-Max 100 chars per input line 
+	-Max 50 tokens per input line
+	-DIR name does not contain spaces
+
+Errors during input:
+	-Input too long		: error if input string longer than 100 characters
+	-Command not found	: print to stderr if command not supported
+	-Error forking		: child process creation for external command unsuccessful
+
+
+INTERNAL COMMANDS: exit, echo, history, pwd, cd
+
+exit : exit [n]
+	exit the shell
+
+	Exits the shell with status N.
+	If N not passed, exit with last commands error status 
+
+
+echo : cd [-neE] [ard ..]
+	write args to stdo
+
+	Options:
+		-n do not append newline
+		-e enable backflash preceeded escape interpretation
+		-E explicitly suppress backslash escape interpretation
+
+	Interpreted escapes:
+		\a  	alert
+		\b 		backspace
+		\c 		suppress further o/p
+		\e 		escape char
+		\E 		escape char
+		\f  	form feed
+		\n 		new line
+		\t 		horizontal tab
+		\v 		vertical tab
+		\\		backslash
+		\0nnn	char with ASCII value nnn in octal
+		\xHH	char with ASCII value nnn in hex
+
+	Others:
+		Single and Double quote resolution supported eg "\n", '\t'
+
+	Corner cases:
+		(prints error report to stderr on)
+		-Incomplete Escape			: enter what to escape after \				//TODO
+		-Unbalanced Quotes (",')	: error printed if quotes are not balance
+
+
+history : history [-c] [-a] [N]
+	display and manipulate history
+
+	Options:
+		-a 	append history lines from this session
+		-c 	clear history list
+
+	Others:
+		N 	print previous N lines of history
+
+	Corner cases:
+		(prints error report to stderr on)
+
+		-Numeric Args Required: Error when non-numeric arguments passed and they are not the ones listed in option
+
+
+
+pwd : pwd [-LP]
+	print the name of current working directory
+
+	Options:
+		-L default, print cwd
+		-P print physical directory, without symbolic links
+
+
+	Corner cases:
+		(prints error report to stderr on)
+
+		-ENAMETOOLONG	: path or part of path is too long
+		-Invalid Options	: invalid options(or args) passed, and prints correct usage
+
+		else just print the error code for other errors
+
+cd : cd [-L] [-P] [DIR]
+	change the current working dir to DIR
+
+	Options:
+		-P use physical dir structure
+		-L force symbolic links to be followed
+
+	Others:
+		cd . 	: move to current dir
+		cd .. 	: move one directory up
+		cd 		: move to home dir
+		cd ~	: move to home dir
+
+	Corner cases:
+		(prints error report to stderr on)
+
+		-EACCESS	: access denied
+		-ENOENT	: not a file or directory
+		-ENOTDIR	: not a directory
+		-Invalid Options	: invalid options(or args) passed, and prints correct usage
+
+		else just print the error code for other errors
+
+
+
+EXTERNAL COMMANDS: ls, cat, date, rm, mkdir
+
+
+
+ls : ls [-ap].. [FILE]..
+	list info about FILEs, or simply the current directory,
+	 alphabetically sorted by default
+
+	Options:
+		-a don't ignore entries with .
+		-p append / indicator to directories
+
+	Others:
+		ls [file].. : run ls for files and print corresponding results
+
+	Corner cases:
+		(prints error report to stderr on)
+
+		-EACCESS	: access denied
+		-ENOENT	: not a file or directory
+		-Invalid Options	: invalid options(or args) passed, and prints correct usage
+
+		else just print the error code for other errors
+
+
+cat : cat [-nE] FILE...
+	concatinate files to stdo
+
+	Options:
+		-n number the output lines
+		-E display $ at end of lines
+
+	Others:
+		cat [file]... : concatinate files to stdio
+
+	Corner cases:
+		(prints error report to stderr on)
+
+		-Missing operand	: no filename mentioned
+		-NO such file/Dir	: no such file or directory found
+		-Invalid Options	: invalid options(or args) passed, and prints correct usage
+
+		else just print the error code for other errors
+
+
+date : date [-uR]
+	print the system date/ time
+	default is to print local time in ISO format
+
+	Options:
+		-u print UTC
+		-R output date in RFC 2822 format
+
+
+	Corner cases:
+		(prints error report to stderr on)
+
+		-Invalid date		: invalid date passed
+		-Invalid Options	: invalid options(or args) passed, and prints correct usage
+
+
+
+rm : rm [-vd]... DIRECTORY...
+	make directories
+
+	Options:
+		-v explain what is being done
+		-d remove empty dirs
+
+	Others:
+		rm [file]... : remove files 
+
+
+	Corner cases:
+		(prints error report to stderr on)
+
+		-Missing operand: no filename mentioned
+		-EACCESS		: access to deleting file denied
+		-ENOENT			: file name does not exist
+		-EISDIR			: file to be deleted is a directory, if -d is disabled
+		-ENONEMPTY/EXIST: when -d enabled and dir is not empty
+		-Invalid Options	: invalid options(or args) passed, and prints correct usage
+
+		else just print the error code for other errors
+
+
+
+mkdir : mkdir [-vp]... DIRECTORY...
+	make directories
+
+	Options:
+		-v explain what is being done
+		-p no error even if existent
+
+	Others:
+		mkdir [DIRECTORY]... : create dirs 
+
+
+	Corner cases:
+		(prints error report to stderr on)
+
+		-Missing operand: no filename mentioned
+		-EXIST: when -p not enabled and dir is existing
+		-Invalid Options	: invalid options(or args) passed, and prints correct usage
+
+		else just print the error code for other errors

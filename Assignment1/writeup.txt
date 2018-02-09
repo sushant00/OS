@@ -1,0 +1,104 @@
+Nilay Sanghvi 			2016063
+Sushant Kumar Singh 	2016103
+
+Description:
+
+We followed the following steps:
+	1. Setup virtual machine with Ubuntu 14.04 LTS server running kernel version 3.13.0
+
+	2. Downloaded same kernel source as currently running using
+		apt-get source linux-image-$(uname -r)
+
+	3. Extracted source using
+		tar xvf linux-3.13.orig.tar.gz
+
+	4. Configured the kernel,
+		for this we first copied the configuration from running kernel by using following
+			cp /boot/config-$(uname -r) .config
+		next we used make to configure using old configurations
+			make oldconfig
+
+	5. added the implementation of sh_task_info system call in kernel/sys.c
+
+	6. added the entry corresponding to the syscall in 
+		arch/x86/syscalls/syscall_64.tbl
+
+	7. next we compiled the kernel to see the changes
+		before compiling we changed make file and added EXTRAVERSION string, then used
+			make
+			make modules_install
+			make install
+
+	8. rebooted the os, with new kernel and tested the syscall
+
+
+Implementation of Syscall:
+
+
+
+
+
+
+
+
+Syscall:
+
+NAME
+	sh_task_info - print process task struct
+
+
+SYNOPSIS
+	#include <.h>
+
+	int sh_task_info(int input_pid, char *filename)
+
+
+DESCRIPTION
+	
+	sh_task-info() prints all the feilds corresponding to the task_struct of the process specified by its id in 'input_pid' and writes the same to the file specified by name 'filename'
+
+ARGUMENTS
+	
+	input_pid	int 	the process ID(PID) of the process whose info is printed and written to file
+
+	filename	char *	name of the file where the info of process is written
+
+OUTPUT
+		
+	The info of the process with PID input_pid stored in task_struct of the process is printed and written to file 'filename'
+
+RETURN VALUE
+	
+	On success, 0 is returned. On error negative value is returned, corresponding to the error no.
+
+
+ERRORS
+	
+	following errors are handled by sh_task_info()
+
+	ESRCH	Cannot find any process associated with PID 'input_pid'
+
+	EACCES	Access to file 'filename' is not allowed
+
+	ENOENT	file 'filename' does not exist
+
+
+
+
+Testing:
+
+	Run the test.c file to test the implementation of sh_task_info
+
+	There are 3 tests, for each test following is shown:
+		1. how the call was made, what arguments were passed
+		2. expected outcome
+		3. returned value, error code
+		4. SUCCESS if result is as expected else FAILURE
+
+
+
+Sources:
+	
+	Linux Kernel Development 
+	Medium
+	brennan.io

@@ -1,0 +1,132 @@
+External: ls, cat, date, rm, mkdir
+Internal: exit, echo, history, pwd, cd
+
+
+---EXTERNAL---
+
+LS:
+
+ls
+ls -a
+ls -p
+ls -ap
+
+ls nosuchdir
+ls -i
+
+
+CAT:
+
+cat rm.c
+cat -n rm.c
+cat -E rm.c
+cat -nE rm.c
+cat rm.c mkdir.c
+
+cat
+cat notdir.txt
+cat -i
+
+
+DATE:
+
+date
+date -u
+date -R
+date -uR
+
+date -i
+date notadate
+
+RM:
+
+//first run below commands on shell
+touch a.txt
+touch b.txt
+touch c.txt
+touch d.txt
+mkdir a b c
+
+rm a.txt
+rm -v b.txt
+rm -d a
+rm -vd c.txt b c
+
+rm
+rm nosuchfile.txt
+rm -i d.txt
+
+MKDIR:
+
+mkdir a
+mkdir -v b
+mkdir -p a
+mkdir -vp a c
+
+mkdir
+mkdir -i d
+mkdir a
+
+
+
+---INTERNAL---
+EXIT:
+
+exit 
+exit 2
+
+ECHO:
+
+echo "hello \n world"
+echo -e "hello \n world" \\t wow \\0141
+echo -E "hello \n world" \\t wow \\0141
+
+echo "hello
+
+
+
+HISTORY:
+
+history
+history 4
+history -a
+ls
+history -c
+
+history abc
+
+
+PWD:
+
+//run following on original bash
+mkdir a 
+mkdir a/b
+ln -s a/b short
+
+pwd
+cd short
+pwd -P
+pwd -L
+
+pwd -i
+
+CD:
+
+//run following on original bash
+mkdir a 
+mkdir a/b
+ln -s a/b short
+
+cd .
+cd ..
+cd src
+cd -P short
+pwd
+cd ..
+cd ..
+cd -L short
+pwd
+
+cd -i
+cd ./nosuchdir
+
