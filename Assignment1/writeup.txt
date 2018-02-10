@@ -33,9 +33,15 @@ We followed the following steps:
 
 
 Implementation of Syscall:
-
-
-
+	
+	It first searches the 'pid_struct' corresponding to the given PID 'input_pid' using 'find_get_pid(PID)'. 
+	If the search result is NULL that means no such process was found and function returns with error code 'ESRCH'.
+	Else we find the 'task_struct' associated with the process using 'pid_task()'.
+	First we change the address space from user space to Kernel space using 'get_fs()' to save the previous space, 'set_fs(KERNEL_DS)' to set to kernel space, where KERNEL_DS is for kernel data segment.
+	It then opens the file 'filename' with flag 'O_WRONLY | O_TRUNC' to open file in write only mode and to overwrite if file already exists and acces is allowed. 
+	If any error occurs while opening the file appropriate error code is returned.
+	It then writes the info (formated using 'sprintf') stored in 'task_struct' to the file.
+	The opened file is then closed and system call returns after setting the older space i.e. user space
 
 
 
@@ -44,11 +50,11 @@ Implementation of Syscall:
 Syscall:
 
 NAME
+
 	sh_task_info - print process task struct
 
 
 SYNOPSIS
-	#include <.h>
 
 	int sh_task_info(int input_pid, char *filename)
 
@@ -61,7 +67,8 @@ ARGUMENTS
 	
 	input_pid	int 	the process ID(PID) of the process whose info is printed and written to file
 
-	filename	char *	name of the file where the info of process is written
+	filename	char *	name of the file where the info of process is written, if 'filename' doesn't exist ENOENT is returned,
+						if access (write access) to 'filename' is denied EACCES is returned
 
 OUTPUT
 		
@@ -86,19 +93,20 @@ ERRORS
 
 
 Testing:
-
+	
+	(First patch using the patch file using 'patch -p0 < mykernel.patch' and compile the new kernel)
+	Test file 'test.c' makes the system call and prints error code and return value to the console
+	
 	Run the test.c file to test the implementation of sh_task_info
+	1. create a file "abc.txt" and run the test (syscall returns 0 and runs successfully)
+	2. delete "abc.txt" and run the test file. (error due to non existent file)
 
-	There are 3 tests, for each test following is shown:
-		1. how the call was made, what arguments were passed
-		2. expected outcome
-		3. returned value, error code
-		4. SUCCESS if result is as expected else FAILURE
 
 
 
 Sources:
 	
-	Linux Kernel Development 
-	Medium
+	Linux Kernel Development by R Love
+	Medium.com
 	brennan.io
+	ytliu.info
