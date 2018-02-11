@@ -25,13 +25,13 @@ We followed the following steps:
 	7. added the header corresponding to the syscall in
 		include/linux/syscalls.h
 
-	7. next we compiled the kernel to see the changes
+	8. next we compiled the kernel to see the changes
 		before compiling we changed make file and added EXTRAVERSION string, then used
 			make
 			make modules_install
 			make install
 
-	8. rebooted the os, with new kernel and tested the syscall
+	9. rebooted the os, with new kernel and tested the syscall
 
 
 Implementation of Syscall:
