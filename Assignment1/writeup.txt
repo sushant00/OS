@@ -9,7 +9,8 @@ We followed the following steps:
 	2. Downloaded same kernel source as currently running using
 		apt-get source linux-image-$(uname -r)
 
-	3. The source was extracted automatically by dpkg-dev on running the previous command and we observed that the diff file(that was downloaded automatically using the above command) was also applied to the extraced kernel source.
+	3. The source was extracted automatically by dpkg-dev on running the previous command and we observed that the diff file
+	   (that was downloaded automatically using the above command) was also applied to the extraced kernel source.
 
 	4. Configured the kernel,
 		for this we first copied the configuration from running kernel by using following
@@ -41,7 +42,7 @@ Implementation of Syscall:
 	Else we find the 'task_struct' associated with the process using 'pid_task()'.
 	First we change the address space from user space to Kernel space using 'get_fs()' to save the previous space, 'set_fs(KERNEL_DS)' to set to kernel space, where KERNEL_DS is for kernel data segment.
 	It then opens the file 'filename' with flag 'O_WRONLY | O_TRUNC' to open file in write only mode and to overwrite if file already exists. Note- only sudo has access to write to the file. 
-	If any error occurs while opening the file appropriate error code is returned.
+	If the file is not found then the function returns with error code 'ENOENT'
 	It then writes the info (formated using 'sprintf') stored in 'task_struct' to the file.
 	The opened file is then closed and system call returns after setting the older space i.e. user space
 
@@ -63,7 +64,7 @@ SYNOPSIS
 
 DESCRIPTION
 	
-	sh_task-info() prints all the feilds corresponding to the task_struct of the process specified by its id in 'input_pid' and writes the same to the file specified by name 'filename'
+	sh_task-info() prints all the feilds corresponding to the task_struct of the process specified by its id in 'input_pid' on the 		kernel log file and writes the same to the file specified by name 'filename'
 
 ARGUMENTS
 	
@@ -74,7 +75,7 @@ ARGUMENTS
 
 OUTPUT
 		
-	The info of the process with PID input_pid stored in task_struct of the process is printed and written to file 'filename'
+	The info of the process with PID input_pid stored in task_struct of the process is printed on the Kernel Log File and written to 	 file 'filename'. ALong with that, if any error is encountered then it's corresponding message is printed on the terminal.
 
 RETURN VALUE
 	
@@ -97,12 +98,11 @@ Testing:
 	(First patch using the patch file using 'patch -p0 < hopefullyfinal.patch' and compile the new kernel)
 	
 	Create file "abc.txt" in the directory where the test cases reside.
-	Test file 'test.c' and 'test1.c' and 'test2.c'- make the system call and prints error and return value to the console
-	The above test files take one argument as Command line input and that is the PID.
 	
-	1. ./test 1 should run successfully
-	2. ./test1 1 should return error - File not found
-	3. ./test2 -1 should return error - No such process
+	Test file "test-final.c". The following three cases will display the working of our system call and  the errors handled-
+	1. ./test 1 abc.txt - Runs successfully 
+	2. ./test 1 doesnotexist.txt - Error : No such file exist
+	3. ./test -1 abc.txt - Error : No such process exists
 
 
 
