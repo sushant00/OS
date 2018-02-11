@@ -87,8 +87,6 @@ ERRORS
 
 	ESRCH	Cannot find any process associated with PID 'input_pid'
 
-	EACCES	Access to file 'filename' is not allowed
-
 	ENOENT	file 'filename' does not exist
 
 
@@ -96,12 +94,15 @@ ERRORS
 
 Testing:
 	
-	(First patch using the patch file using 'patch -p0 < mykernel.patch' and compile the new kernel)
-	Test file 'test.c' makes the system call and prints error code and return value to the console
+	(First patch using the patch file using 'patch -p0 < hopefullyfinal.patch' and compile the new kernel)
 	
-	Run the test.c file to test the implementation of sh_task_info
-	1. create a file "abc.txt" and run the test (syscall returns 0 and runs successfully)
-	2. delete "abc.txt" and run the test file. (error due to non existent file)
+	Create file "abc.txt" in the directory where the test cases reside.
+	Test file 'test.c' and 'test1.c' and 'test2.c'- make the system call and prints error and return value to the console
+	The above test files take one argument as Command line input and that is the PID.
+	
+	1. ./test 1 should run successfully
+	2. ./test1 1 should return error - File not found
+	3. ./test2 -1 should return error - No such process
 
 
 
