@@ -4,13 +4,12 @@ Sushant Kumar Singh 	2016103
 Description:
 
 We followed the following steps:
-	1. Setup virtual machine with Ubuntu 14.04 LTS server running kernel version 3.13.0
+	1. Setup virtual machine with Ubuntu 14.04 LTS server running kernel version 3.13.0.24-generic
 
 	2. Downloaded same kernel source as currently running using
 		apt-get source linux-image-$(uname -r)
 
-	3. Extracted source using
-		tar xvf linux-3.13.orig.tar.gz
+	3. The source was extracted automatically by dpkg-dev on running the previous command and we observed that the diff file(that was downloaded automatically using the above command) was also applied to the extraced kernel source.
 
 	4. Configured the kernel,
 		for this we first copied the configuration from running kernel by using following
@@ -22,14 +21,17 @@ We followed the following steps:
 
 	6. added the entry corresponding to the syscall in 
 		arch/x86/syscalls/syscall_64.tbl
+		
+	7. added the header corresponding to the syscall in
+		include/linux/syscalls.h
 
-	7. next we compiled the kernel to see the changes
+	8. next we compiled the kernel to see the changes
 		before compiling we changed make file and added EXTRAVERSION string, then used
 			make
 			make modules_install
 			make install
 
-	8. rebooted the os, with new kernel and tested the syscall
+	9. rebooted the os, with new kernel and tested the syscall
 
 
 Implementation of Syscall:
@@ -38,7 +40,7 @@ Implementation of Syscall:
 	If the search result is NULL that means no such process was found and function returns with error code 'ESRCH'.
 	Else we find the 'task_struct' associated with the process using 'pid_task()'.
 	First we change the address space from user space to Kernel space using 'get_fs()' to save the previous space, 'set_fs(KERNEL_DS)' to set to kernel space, where KERNEL_DS is for kernel data segment.
-	It then opens the file 'filename' with flag 'O_WRONLY | O_TRUNC' to open file in write only mode and to overwrite if file already exists and acces is allowed. 
+	It then opens the file 'filename' with flag 'O_WRONLY | O_TRUNC' to open file in write only mode and to overwrite if file already exists. Note- only sudo has access to write to the file. 
 	If any error occurs while opening the file appropriate error code is returned.
 	It then writes the info (formated using 'sprintf') stored in 'task_struct' to the file.
 	The opened file is then closed and system call returns after setting the older space i.e. user space
@@ -76,7 +78,7 @@ OUTPUT
 
 RETURN VALUE
 	
-	On success, 0 is returned. On error negative value is returned, corresponding to the error no.
+	On success, 0 is returned. On error -1 is returned and'errno' is set corresponding to the error.
 
 
 ERRORS
@@ -85,8 +87,6 @@ ERRORS
 
 	ESRCH	Cannot find any process associated with PID 'input_pid'
 
-	EACCES	Access to file 'filename' is not allowed
-
 	ENOENT	file 'filename' does not exist
 
 
@@ -94,12 +94,15 @@ ERRORS
 
 Testing:
 	
-	(First patch using the patch file using 'patch -p0 < mykernel.patch' and compile the new kernel)
-	Test file 'test.c' makes the system call and prints error code and return value to the console
+	(First patch using the patch file using 'patch -p0 < hopefullyfinal.patch' and compile the new kernel)
 	
-	Run the test.c file to test the implementation of sh_task_info
-	1. create a file "abc.txt" and run the test (syscall returns 0 and runs successfully)
-	2. delete "abc.txt" and run the test file. (error due to non existent file)
+	Create file "abc.txt" in the directory where the test cases reside.
+	Test file 'test.c' and 'test1.c' and 'test2.c'- make the system call and prints error and return value to the console
+	The above test files take one argument as Command line input and that is the PID.
+	
+	1. ./test 1 should run successfully
+	2. ./test1 1 should return error - File not found
+	3. ./test2 -1 should return error - No such process
 
 
 
