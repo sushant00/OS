@@ -1,0 +1,80 @@
+diff -Nur linux-3.13.0/arch/x86/syscalls/syscall_64.tbl linux-my-kernel1/arch/x86/syscalls/syscall_64.tbl
+--- linux-3.13.0/arch/x86/syscalls/syscall_64.tbl	2018-02-11 10:27:54.000000000 +0530
++++ linux-my-kernel1/arch/x86/syscalls/syscall_64.tbl	2018-02-11 10:23:38.853667000 +0530
+@@ -324,6 +324,7 @@
+ 315	common	sched_getattr		sys_ni_syscall
+ 316	common	renameat2		sys_ni_syscall
+ 317	common	seccomp			sys_seccomp
++318	common	sh_task_info		sys_sh_task_info
+ 
+ #
+ # x32-specific system call numbers start at 512 to avoid cache impact
+diff -Nur linux-3.13.0/include/linux/syscalls.h linux-my-kernel1/include/linux/syscalls.h
+--- linux-3.13.0/include/linux/syscalls.h	2018-02-11 10:27:54.000000000 +0530
++++ linux-my-kernel1/include/linux/syscalls.h	2018-02-11 10:26:04.589667000 +0530
+@@ -849,4 +849,5 @@
+ asmlinkage long sys_finit_module(int fd, const char __user *uargs, int flags);
+ asmlinkage long sys_seccomp(unsigned int op, unsigned int flags,
+ 			    const char __user *uargs);
++asmlinkage long sys_sh_task_info(int input_pid,char *filename);
+ #endif
+diff -Nur linux-3.13.0/kernel/sys.c linux-my-kernel1/kernel/sys.c
+--- linux-3.13.0/kernel/sys.c	2018-02-11 10:27:54.000000000 +0530
++++ linux-my-kernel1/kernel/sys.c	2018-02-11 10:26:39.633667000 +0530
+@@ -12,6 +12,9 @@
+ #include <linux/prctl.h>
+ #include <linux/highuid.h>
+ #include <linux/fs.h>
++#include <linux/fcntl.h>
++#include <linux/module.h>
++#include <linux/device.h>
+ #include <linux/kmod.h>
+ #include <linux/perf_event.h>
+ #include <linux/resource.h>
+@@ -114,6 +117,46 @@
+ EXPORT_SYMBOL(fs_overflowuid);
+ EXPORT_SYMBOL(fs_overflowgid);
+ 
++SYSCALL_DEFINE2(sh_task_info,int,input_pid,char *,filename)
++{
++	struct pid *pid_struct;
++	struct task_struct *task;
++	struct file *file;
++	char buff[1023];
++	loff_t pos=0;
++	mm_segment_t oldfs;
++	int len,ret;
++	pid_struct=find_get_pid(input_pid);
++	if(pid_struct==NULL)
++		return -ESRCH;	
++	else
++	{
++		task=pid_task(pid_struct,PIDTYPE_PID);
++		if(task==NULL)
++			return -ESRCH;
++		oldfs=get_fs();
++		set_fs(get_ds());
++		file= filp_open(filename,O_WRONLY | O_TRUNC,0644);
++		if(IS_ERR(file))
++		{
++			printk("%ld\n",PTR_ERR(file));
++			return -ENOENT;
++		}
++		len=sprintf(buff,"Task name: %s\nTask pid: %d\nTask state: %ld\nTask flags: %d \n",task->comm,input_pid,task->state,task->flags);
++		ret=vfs_write(file,buff,len,&pos);
++		if(ret==-1)
++			return -EACCES;
++		len=sprintf(buff,"Task ptrace: %d\nTask exit_state: %d\nTask personality: %d\n",task->ptrace,task->exit_state,task->personality);
++		ret=vfs_write(file,buff,len,&pos);
++		if(ret==-1)
++			return -EACCES;
++		filp_close(file,NULL);
++		set_fs(oldfs);		
++		printk("Task name: %s\nTask pid: %d\nTask state: %ld\nTask flags: %d \nTask ptrace: %d\nTask exit_state: %d\nTask personality: %d\n",task->comm,input_pid,task->state,task->flags,task->ptrace,task->exit_state,task->personality);
++	}
++	return 0;
++}
++
+ /*
+  * Returns true if current's euid is same as p's uid or euid,
+  * or has CAP_SYS_NICE to p's user_ns.
