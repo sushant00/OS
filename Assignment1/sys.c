@@ -152,28 +152,47 @@ SYSCALL_DEFINE2(sh_task_info,int,input_pid,char *,filename)
 			      rt_priority: %u\n\
 			      sched_entity se: \n\
 			      	  se.on_rq: %u\n\
-				  se.exec_start: %ul\n\
-				  se.sum_exec_runtime: %ul\n\
-				  se.vruntime: %ul\n\
-				  se.prev_sum_exec_runtime: %ul\n\
-				  se.nr_migrations: %ul\n\
+				  se.exec_start: %llu\n\
+				  se.sum_exec_runtime: %llu\n\
+				  se.vruntime: %llu\n\
+				  se.prev_sum_exec_runtime: %llu\n\
+				  se.nr_migrations: %llu\n\
 				pid: %d\n\
 			      tgid: %d\n\",
-			      task->comm, task->state, task->on_cpu, task->prio, task->static_prio, task->normal_prio,
-			     task->rt_priority,
-			      task->se.on_rq, task->se.exec_start, task->se.sum_exec_runtime,
-			      task->se.vruntime, task->se.prev_sum_exec_runtime, task->se.nr_migrations, task->pid, task->tgid);
+			task->comm, task->state, task->on_cpu, task->prio, task->static_prio, task->normal_prio,
+			task->rt_priority,
+			task->se.on_rq, task->se.exec_start, task->se.sum_exec_runtime,
+			task->se.vruntime, task->se.prev_sum_exec_runtime, task->se.nr_migrations, task->pid, task->tgid);
+		printk("%s", buff);
 		ret=vfs_write(file,buff,len,&pos);
 		if(ret==-1)
 			return -EACCES;
-		//len=sprintf(buff,"Task ptrace: %d\nTask exit_state: %d\nTask personality: %d\n",task->ptrace,task->exit_state,task->personality);
 		
+		
+		
+		
+		//len=sprintf(buff,"Task ptrace: %d\nTask exit_state: %d\nTask personality: %d\n",task->ptrace,task->exit_state,task->personality);
+		len = sprintf(buff, "thread_struct thread:\n\
+					sp0: %lu\n\
+					sp: %lu\n\
+					gs: %lu\n\
+					debugreg6: %lu\n\
+					ptrace_dr7: %lu\n\
+					cr2: %lu\n\
+					trap_nr: %lu\n\
+					error_code: %lu\n\
+					iopl: %lu\n\", 
+			      	task->thread.sp0, task->thread.sp, task->thread.gs, task->thread.debugreg6,
+			    	task->thread.ptrace_dr7, task->thread.cr2, task->thread.trap_nr, task->thread.error_code,
+			      	task->thread.iopl
+			     );
+		printk("%s", buff);
 		ret=vfs_write(file,buff,len,&pos);
 		if(ret==-1)
 			return -EACCES;
 		filp_close(file,NULL);
 		set_fs(oldfs);		
-		printk("Task name: %s\nTask pid: %d\nTask state: %ld\nTask flags: %d \nTask ptrace: %d\nTask exit_state: %d\nTask personality: %d\n",task->comm,input_pid,task->state,task->flags,task->ptrace,task->exit_state,task->personality);
+		//printk("Task name: %s\nTask pid: %d\nTask state: %ld\nTask flags: %d \nTask ptrace: %d\nTask exit_state: %d\nTask personality: %d\n",task->comm,input_pid,task->state,task->flags,task->ptrace,task->exit_state,task->personality);
 	}
 	return 0;
 }
