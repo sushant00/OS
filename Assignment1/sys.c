@@ -159,7 +159,7 @@ SYSCALL_DEFINE2(sh_task_info,int,input_pid,char *,filename)
 				  se.prev_sum_exec_runtime: %llu\n\
 				  se.nr_migrations: %llu\n\
 				pid: %d\n\
-			      tgid: %d\n\",
+			      tgid: %d\n",
 			task->comm, task->state, task->on_cpu, task->prio, task->static_prio, task->normal_prio,
 			task->rt_priority,
 			task->se.on_rq, task->se.exec_start, task->se.sum_exec_runtime,
@@ -213,7 +213,7 @@ SYSCALL_DEFINE2(sh_task_info,int,input_pid,char *,filename)
 					cr2: %lu\n\
 					trap_nr: %lu\n\
 					error_code: %lu\n\
-					iopl: %lu\n\", 
+					iopl: %lu\n", 
 			      	task->thread.sp0, task->thread.sp, task->thread.gs, task->thread.debugreg6,
 			    	task->thread.ptrace_dr7, task->thread.cr2, task->thread.trap_nr, task->thread.error_code,
 			      	task->thread.iopl
