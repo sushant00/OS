@@ -125,6 +125,7 @@ SYSCALL_DEFINE2(sh_task_info,int,input_pid,char *,filename)
 	char buff[1023];
 	loff_t pos=0;
 	mm_segment_t oldfs;
+	int sigCheck;
 	int len,ret;
 	pid_struct=find_get_pid(input_pid);
 	if(pid_struct==NULL)
@@ -168,8 +169,39 @@ SYSCALL_DEFINE2(sh_task_info,int,input_pid,char *,filename)
 		if(ret==-1)
 			return -EACCES;
 		
+		//print blocked signals
+		len = sprintf(buff, "blocked signals:\n");
+		printk("%s", buff);
+		ret=vfs_write(file,buff,len,&pos);
+		if(ret==-1)
+			return -EACCES;
 		
+		for(sigCheck = 0; sigCheck < 64; sigCheck++){
+			if(sigismember(task->blocked, sigCheck)){
+				len = sprintf(buff, "%d\n", sigCheck);
+				printk("%s", buff);
+				ret=vfs_write(file,buff,len,&pos);
+				if(ret==-1)
+					return -EACCES;
+			}		
+		}
 		
+		//print real_blocked signals		
+		len = sprintf(buff, "real_blocked signals:\n");
+		printk("%s", buff);
+		ret=vfs_write(file,buff,len,&pos);
+		if(ret==-1)
+			return -EACCES;
+		
+		for(sigCheck = 0; sigCheck < 64; sigCheck++){
+			if(sigismember(task->real_blocked, sigCheck)){
+				len = sprintf(buff, "%d\n", sigCheck);
+				printk("%s", buff);
+				ret=vfs_write(file,buff,len,&pos);
+				if(ret==-1)
+					return -EACCES;
+			}		
+		}
 		
 		//len=sprintf(buff,"Task ptrace: %d\nTask exit_state: %d\nTask personality: %d\n",task->ptrace,task->exit_state,task->personality);
 		len = sprintf(buff, "thread_struct thread:\n\
