@@ -151,10 +151,18 @@ SYSCALL_DEFINE2(sh_task_info,int,input_pid,char *,filename)
 			      normal_prio: %d\n\
 			      rt_priority: %u\n\
 			      sched_entity se: \n\
-			      pid: %d\n\
+			      	  se.on_rq: %u\n\
+				  se.exec_start: %ul\n\
+				  se.sum_exec_runtime: %ul\n\
+				  se.vruntime: %ul\n\
+				  se.prev_sum_exec_runtime: %ul\n\
+				  se.nr_migrations: %ul\n\
+				pid: %d\n\
 			      tgid: %d\n\",
 			      task->comm, task->state, task->on_cpu, task->prio, task->static_prio, task->normal_prio,
-			     task->rt_priority, task->pid, task->tgid);
+			     task->rt_priority,
+			      task->se.on_rq, task->se.exec_start, task->se.sum_exec_runtime,
+			      task->se.vruntime, task->se.prev_sum_exec_runtime, task->se.nr_migrations, task->pid, task->tgid);
 		ret=vfs_write(file,buff,len,&pos);
 		if(ret==-1)
 			return -EACCES;
