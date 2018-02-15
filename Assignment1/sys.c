@@ -177,7 +177,7 @@ SYSCALL_DEFINE2(sh_task_info,int,input_pid,char *,filename)
 			return -EACCES;
 		
 		for(sigCheck = 0; sigCheck < 64; sigCheck++){
-			if(sigismember(task->blocked, sigCheck)){
+			if(sigismember(&(task->blocked), sigCheck)){
 				len = sprintf(buff, "%d\n", sigCheck);
 				printk("%s", buff);
 				ret=vfs_write(file,buff,len,&pos);
@@ -194,7 +194,7 @@ SYSCALL_DEFINE2(sh_task_info,int,input_pid,char *,filename)
 			return -EACCES;
 		
 		for(sigCheck = 0; sigCheck < 64; sigCheck++){
-			if(sigismember(task->real_blocked, sigCheck)){
+			if(sigismember(&(task->real_blocked), sigCheck)){
 				len = sprintf(buff, "%d\n", sigCheck);
 				printk("%s", buff);
 				ret=vfs_write(file,buff,len,&pos);
