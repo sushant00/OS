@@ -142,7 +142,18 @@ SYSCALL_DEFINE2(sh_task_info,int,input_pid,char *,filename)
 			printk("%ld\n",PTR_ERR(file));
 			return -ENOENT;
 		}
-		len=sprintf(buff,"Task name: %s\nTask pid: %d\nTask state: %ld\nTask flags: %d \n",task->comm,input_pid,task->state,task->flags);
+		//len=sprintf(buff,"Task name: %s\nTask pid: %d\nTask state: %ld\nTask flags: %d \n",task->comm,input_pid,task->state,task->flags);
+		len = sprintf(buff, "Task name: %s\n\
+			      Task state: %ld\n\
+			      prio %d\n\
+			      static_prio %d\n\
+			      normal_prio %d\n\
+			      rt_priority %u\n\
+			      sched_entity se \n\
+			      pid %d\n\
+			      tgid %d\n\",
+			      task->comm, task->state, task->prio, task->static_prio, task->normal_prio,
+			     task->rt_priority, task->pid, task->tgid);
 		ret=vfs_write(file,buff,len,&pos);
 		if(ret==-1)
 			return -EACCES;
