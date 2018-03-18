@@ -120,6 +120,32 @@ int fs_overflowgid = DEFAULT_FS_OVERFLOWUID;
 EXPORT_SYMBOL(fs_overflowuid);
 EXPORT_SYMBOL(fs_overflowgid);
 
+
+// -----SYSCALL RTNICE------
+
+SYSCALL_DEFINE2(rtnice,int,input_pid,long,srtime)
+{
+	struct pid *pid_struct;
+	struct task_struct *task;
+	pid_struct=find_get_pid(input_pid);
+	if(pid_struct==NULL)
+		return -ESRCH;	
+	else
+	{
+		task=pid_task(pid_struct,PIDTYPE_PID);
+		if(task==NULL)
+			return -ESRCH;
+		task->se.srtime = srtime;
+	}
+	return 0;
+}
+
+
+
+
+
+
+
 /*
  * Returns true if current's euid is same as p's uid or euid,
  * or has CAP_SYS_NICE to p's user_ns.
