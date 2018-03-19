@@ -3314,7 +3314,20 @@ entity_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr, int queued)
 	 * Update run-time statistics of the 'current'.
 	 */
 	update_curr(cfs_rq);
+	
+	/* Account for time slices given as srtime guarantee
+	 * If the process has srtime requirements
+	 * and timeslice is remaining, then redue the slices
+	 * also when all slices given, remove srtime requirement
+	 */
+	if(curr->srtime>0){
+		if(!--curr->timeslice){
+			// remove srtime requirements as all timeslices given
+			curr->srtime = 0;
+		}
+	}
 
+	
 	/*
 	 * Ensure that runnable average is periodically updated.
 	 */
