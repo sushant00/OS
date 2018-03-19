@@ -1196,7 +1196,7 @@ struct sched_entity {
 	/* remaining timeslices as guarenteed by srtime */
 	unsigned int		timeslice;
 	/* time when srtime was assigned */
-	unsigned long		time_stamp_srtime;
+	u64		time_stamp_srtime;
 };
 
 struct sched_rt_entity {
