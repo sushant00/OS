@@ -1163,8 +1163,6 @@ struct sched_entity {
 	struct rb_node		run_node;
 	struct list_head	group_node;
 	unsigned int		on_rq;
-
-	// ---- unsigned long srtime added in the end ----
 	
 	u64			exec_start;
 	u64			sum_exec_runtime;
@@ -1190,10 +1188,13 @@ struct sched_entity {
 	/* Per-entity load-tracking */
 	struct sched_avg	avg;
 #endif
+	
+	
+	
 	/* soft real time guarentee of process */
 	unsigned long 		srtime;
-	/* 1 if the process has not received its continuous x units timeslice */
-	unsigned int		flag_srtime;
+	/* remaining timeslices as guarenteed by srtime */
+	unsigned int		timeslice;
 	/* time when srtime was assigned */
 	unsigned long		time_stamp_srtime;
 };
