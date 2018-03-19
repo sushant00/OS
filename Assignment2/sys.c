@@ -123,11 +123,16 @@ EXPORT_SYMBOL(fs_overflowgid);
 
 // -----SYSCALL RTNICE------
 
-SYSCALL_DEFINE2(rtnice,int,input_pid,long,srtime)
+#define DEF_TIMESLICE_SRTIME 4
+
+SYSCALL_DEFINE2(rtnice,int,input_pid,unsigned long,srtime)
 {
+	//TODO:  add check for process not in cfs_rq if needed
+	
 	struct pid *pid_struct;
 	struct task_struct *task;
 	pid_struct=find_get_pid(input_pid);
+	u64 now;
 	if(pid_struct==NULL)
 		return -ESRCH;	
 	else
@@ -135,7 +140,15 @@ SYSCALL_DEFINE2(rtnice,int,input_pid,long,srtime)
 		task=pid_task(pid_struct,PIDTYPE_PID);
 		if(task==NULL)
 			return -ESRCH;
+		printk("found the process");
 		task->se.srtime = srtime;
+		printk("assigned srtime");
+		task->se.timeslice = DEF_TIMESLICE_SRTIME;
+		printk("assigned default time slice of %d units", DEF_TIMESLICE_SRTIME);
+		now = rq_clock_task(rq_of(cfs_rq_of(se)));
+		printk("current time_stamp now = %d", now);
+		task->se.time_stamp_srtime = now;
+		printk("time_stamp assigned of %d", now);
 	}
 	return 0;
 }
