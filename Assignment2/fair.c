@@ -546,13 +546,43 @@ struct sched_entity *__pick_first_entity(struct cfs_rq *cfs_rq)
 	return rb_entry(left, struct sched_entity, run_node);
 }
 
+#define SRTIME_THRESHOLD 0;
 static struct sched_entity *__pick_next_entity(struct sched_entity *se)
 {
+	struct task_struct *task;
+	struct sched_entity *next_srtime;
+	unsigned long delta_exec;
+	unsigned int percent_passed;
+	unsigned int nearest_deadline;
+	u64 now = rq_clock_task(rq_of(cfs_rq_of(se)));
+	
 	struct rb_node *next = rb_next(&se->run_node);
-
+	
 	if (!next)
 		return NULL;
-
+	
+	for_each_process(task){
+		//if(task->se != NULL){
+			if(task->se.on_rq == 1){
+				if(task->se.srtime>0){
+					delta_exec = (unsigned long)(now - task->se.time_stamp_srtime);
+					percent_passed = (unsigned int) ((delta_exec*100)/(task->se.srtime));
+					/*
+					select the process whose percent deadline has passed the highest
+					*/
+					if(percent_passed > nearest_deadline){
+						next_srtime = &(task->se);
+						nearest_deadline = percent_passed;
+					}
+				}
+			}
+		//}
+	}
+	
+	if(nearest_deadline >= SRTIME_THRESHOLD){
+		return next_srtime;
+	}
+	
 	return rb_entry(next, struct sched_entity, run_node);
 }
 
