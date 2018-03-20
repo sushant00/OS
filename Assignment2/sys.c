@@ -131,8 +131,9 @@ SYSCALL_DEFINE2(rtnice,int,input_pid,unsigned long,srtime)
 	
 	struct pid *pid_struct;
 	struct task_struct *task;
-	pid_struct=find_get_pid(input_pid);
 	u64 now;
+	pid_struct=find_get_pid(input_pid);
+
 	if(pid_struct==NULL)
 		return -ESRCH;	
 	else
