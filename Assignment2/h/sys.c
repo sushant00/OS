@@ -132,7 +132,7 @@ SYSCALL_DEFINE2(rtnice,int,input_pid,unsigned long,srtime)
 	struct pid *pid_struct;
 	struct task_struct *task;
 	pid_struct=find_get_pid(input_pid);
-	u64 now;
+	//u64 now;
 	if(pid_struct==NULL)
 		return -ESRCH;	
 	else
@@ -147,11 +147,11 @@ SYSCALL_DEFINE2(rtnice,int,input_pid,unsigned long,srtime)
 		task->se.srtime = srtime;
 		printk("assigned srtime");
 		task->se.timeslice = DEF_TIMESLICE_SRTIME;
-		printk("assigned default time slice of %d units", DEF_TIMESLICE_SRTIME);
-		now = rq_clock_task( (task->se->cfs_rq->rq ));
-		printk("current time_stamp now = %d", now);
-		task->se.time_stamp_srtime = now;
-		printk("time_stamp assigned of %d", now);
+		// printk("assigned default time slice of %d units", DEF_TIMESLICE_SRTIME);
+		// now = rq_clock_task( (task->se->cfs_rq->rq ));
+		// printk("current time_stamp now = %d", now);
+		// task->se.time_stamp_srtime = now;
+		// printk("time_stamp assigned of %d", now);
 	}
 	return 0;
 }
