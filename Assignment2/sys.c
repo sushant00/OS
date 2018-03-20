@@ -148,10 +148,10 @@ SYSCALL_DEFINE2(rtnice,int,input_pid,unsigned long,srtime)
 		printk("assigned srtime");
 		task->se.timeslice = DEF_TIMESLICE_SRTIME;
 		printk("assigned default time slice of %d units", DEF_TIMESLICE_SRTIME);
-		now = rq_clock_task( (task->se->cfs_rq->rq ));
-		printk("current time_stamp now = %d", now);
+		now = rq_clock_task( (task->se.cfs_rq->rq ));
+		printk("current time_stamp now = %llu", now);
 		task->se.time_stamp_srtime = now;
-		printk("time_stamp assigned of %d", now);
+		printk("time_stamp assigned of %llu", now);
 	}
 	return 0;
 }
