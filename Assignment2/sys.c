@@ -124,7 +124,7 @@ EXPORT_SYMBOL(fs_overflowgid);
 // -----SYSCALL RTNICE------
 
 #define DEF_TIMESLICE_SRTIME 4
-
+#include "sched/sched.h"
 SYSCALL_DEFINE2(rtnice,int,input_pid,unsigned long,srtime)
 {
 	//TODO:  add check for process not in cfs_rq if needed
