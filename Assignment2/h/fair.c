@@ -712,6 +712,9 @@ static void update_curr(struct cfs_rq *cfs_rq)
 	curr->sum_exec_runtime += delta_exec;
 	schedstat_add(cfs_rq, exec_clock, delta_exec);
 
+	// -----------------SRTIME-------------
+	curr->srtime -= (unsigned long)delta_exec;
+
 	curr->vruntime += calc_delta_fair(delta_exec, curr);
 	update_min_vruntime(cfs_rq);
 
@@ -3211,20 +3214,11 @@ pick_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *curr)
 	/* if the current task was selected based on srtime, 
 	 * and if the srtime guarentee is not met, rerun this task
 	 */
-	if(curr){
-		if(curr->srtime){
-			if(curr->timeslice){
-				return curr;
-			}
-		}
-	}
-	
-	
+
+	// -----------------SRTIME-------------
 	struct task_struct *task;
 	struct sched_entity *next_srtime;
-	unsigned long delta_exec;
-	unsigned int percent_passed;
-	unsigned int nearest_deadline = 0;
+
 	u64 now = rq_clock_task(rq_of(cfs_rq_of(se)));
 	
 	struct sched_entity *left = __pick_first_entity(cfs_rq);
@@ -3272,30 +3266,23 @@ pick_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *curr)
 
 	clear_buddies(cfs_rq, se);
 
+
+	// -----------------SRTIME-------------
+	next_srtime = se;
 	// Select process based on srtime
 	for_each_process(task){
 		//if(task->se != NULL){
 			if(task->se.on_rq == 1){
-				if(task->se.srtime>0){
-					delta_exec = (unsigned long)(now - task->se.time_stamp_srtime);
-					percent_passed = (unsigned int) ((delta_exec*100)/(task->se.srtime));
-					/*
-					select the process whose percent deadline has passed the highest
-					*/
-					if(percent_passed > nearest_deadline){
+				if(task->se.srtime>0){					
+					if(task->se.srtime > next_srtime.srtime){
 						next_srtime = &(task->se);
-						nearest_deadline = percent_passed;
 					}
 				}
 			}
 		//}
 	}
-	//check if regular rbtree task to be run or the one selected based on srtime
-	if(nearest_deadline >= SRTIME_THRESHOLD){
-		return next_srtime;
-	}
 	
-	return se;
+	return next_srtime;
 }
 
 static bool check_cfs_rq_runtime(struct cfs_rq *cfs_rq);
@@ -3336,12 +3323,12 @@ entity_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr, int queued)
 	 * and timeslice is remaining, then redue the slices
 	 * also when all slices given, remove srtime requirement
 	 */
-	if(curr->srtime>0){
-		if(!--curr->timeslice){
-			// remove srtime requirements as all timeslices given
-			curr->srtime = 0;
-		}
-	}
+	// if(curr->srtime>0){
+	// 	if(!--curr->timeslice){
+	// 		// remove srtime requirements as all timeslices given
+	// 		curr->srtime = 0;
+	// 	}
+	// }
 
 	
 	/*
