@@ -1,0 +1,105 @@
+OS ASSIGNMENT 2      CFS SCHEDULER
+
+Description:
+
+Following steps were followed:
+	1. Setting up vm with Ubuntu 14.04.4 LTS Server
+	2. cloned kernel linux-3.19.0 source tree from git
+	3. Added the attribute 'unsigned long srtime' in 
+		struct sched_entity in 'include/linux/sched.h'
+	4. Implemented the system call 'rtnice' following the same
+	 	steps as mentioned in Assignment-1
+	5.	Modified 
+		'static struct sched_entity *
+		pick_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *curr)'
+		and 
+		'static void update_curr_fair(struct rq *rq)'
+		in 'kernel/sched/fair.c'
+
+
+
+Addition to 'pick_next_entity()' :
+	Before the return statement of regular pick_next_entity, iterate all processes in rq (checked through "on_rq") that have non-zero srtime and select the process with max srtime and return it.
+
+	Thus the modified function chooses the max srtime task if present and returns it else returns the one selected by the regular version of this function(based on vruntime)
+
+
+
+Addition to 'update_curr()'	:
+	If the selected process has srtime>0 then it is reduced by the time it has been executing (calculated by delta_exec)
+	keeping a check for srtime < 0 after subtracting delta_exec
+
+	Thus the process running accounts for the time it has been executing
+
+
+Syscall:
+
+
+NAME
+
+	rtnice - assign soft-real-time guarantee to a process
+
+
+SYNOPSIS
+
+	int rtnice(int input_pid, unsigned long srtime)
+
+
+DESCRIPTION
+	
+	rtnice() assigns soft real time guarantee to a process
+	with PID input_pid with value srtime
+
+ARGUMENTS
+	
+	input_pid	int 			the process ID(PID) of the process 
+								who is provided soft-real-time priority
+
+	srtime		unsigned long	the value srtime to be assigned to the process,
+								should be <= 1e6
+
+OUTPUT
+		
+	Prints success/ failure messages to console during assigning srtime to the process.
+
+RETURN VALUE
+	
+	On success, 0 is returned. On error -1 is returned and'errno' is set corresponding to the error.
+
+
+ERRORS
+	
+	following errors are handled by rtnice()
+
+	1.ESRCH :	Cannot find any process associated with PID 'input_pid'
+
+	2.Already-assigned-srtime : process already with srtime>0 cannot be assigned srtime. Error msg is printed to kernel log
+
+	3.srtime-too-big :		srtime > 1e6 is not allowed and error msg is printed to kernel log
+
+
+
+
+
+Testing:
+	
+	Apply the patch on kernel-source-tree and compile the kernel
+
+	On this newly compiled kernel do the following:
+	gcc test_rtnice.c -o test1
+	./test1
+
+	TEST DETAILS: in test 1 a child process is forked, and is assigned srtime through syscall rtnice
+	child and parent then execute same code (with about 2e9 iterations) and execution time is noted for both and printed to console
+
+	EXPECTED_OBSERVATION: child executes faster than parent due to srtime guarantee
+
+	
+	
+
+
+
+
+Sources:
+	
+	Linux Kernel Development by R Love
