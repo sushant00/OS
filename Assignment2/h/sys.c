@@ -123,16 +123,21 @@ EXPORT_SYMBOL(fs_overflowgid);
 
 // -----SYSCALL RTNICE------
 
-#define DEF_TIMESLICE_SRTIME 4
-
+//#include "sched/sched.h"
 SYSCALL_DEFINE2(rtnice,int,input_pid,unsigned long,srtime)
 {
 	//TODO:  add check for process not in cfs_rq if needed
 	
 	struct pid *pid_struct;
 	struct task_struct *task;
+	//u64 now = 0;
 	pid_struct=find_get_pid(input_pid);
-	//u64 now;
+	//int default_timeslice = 2000;
+	if(srtime > 1000000){
+		printk(KERN_ERR "too big srtime to assign\n");
+		return -1;
+	}
+
 	if(pid_struct==NULL)
 		return -ESRCH;	
 	else
@@ -140,18 +145,20 @@ SYSCALL_DEFINE2(rtnice,int,input_pid,unsigned long,srtime)
 		task=pid_task(pid_struct,PIDTYPE_PID);
 		if(task==NULL)
 			return -ESRCH;
-		printk("found the process");
+		printk(KERN_ERR "found the process\n");
 		if(task->se.srtime > 0){
-			return -200;		// the task already has srtime assigned
+			printk(KERN_ERR "already has srtime\n");
+			return -1;		// the task already has srtime assigned
 		}
 		task->se.srtime = srtime;
-		printk("assigned srtime");
-		task->se.timeslice = DEF_TIMESLICE_SRTIME;
-		// printk("assigned default time slice of %d units", DEF_TIMESLICE_SRTIME);
-		// now = rq_clock_task( (task->se->cfs_rq->rq ));
-		// printk("current time_stamp now = %d", now);
-		// task->se.time_stamp_srtime = now;
-		// printk("time_stamp assigned of %d", now);
+		printk(KERN_ERR "assigned srtime\n");
+//		task->se.timeslice = default_timeslice;
+//		printk("assigned default time slice of %d units \n",default_timeslice);
+		//now = rq_clock_task( (task->se.cfs_rq->rq ));
+//		printk(KERN_ERR "current time_stamp now = %llu \n", now);
+//		task->se.time_stamp_srtime = now;
+//		printk(KERN_ERR "time_stamp assigned of %llu \n", now);
+		printk(KERN_ERR "%lu \n", task->se.srtime);
 	}
 	return 0;
 }

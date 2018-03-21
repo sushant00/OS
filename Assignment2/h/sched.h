@@ -1188,15 +1188,7 @@ struct sched_entity {
 	/* Per-entity load-tracking */
 	struct sched_avg	avg;
 #endif
-
-
-	/* soft real time guarentee of process */
 	unsigned long 		srtime;
-	/* remaining timeslices as guarenteed by srtime */
-	unsigned int		timeslice;
-	/* time when srtime was assigned */
-	u64		time_stamp_srtime;
-
 };
 
 struct sched_rt_entity {
