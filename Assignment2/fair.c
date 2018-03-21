@@ -3195,7 +3195,7 @@ static int
 wakeup_preempt_entity(struct sched_entity *curr, struct sched_entity *se);
 
 
-#define SRTIME_THRESHOLD 0;
+#define SRTIME_THRESHOLD 0
 
 /*
  * Pick the next process, keeping these things in mind, in this order:
@@ -3208,6 +3208,17 @@ static struct sched_entity *
 pick_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *curr)
 {
 	
+	
+	struct task_struct *task;
+	struct sched_entity *next_srtime;
+	unsigned long delta_exec;
+	unsigned int percent_passed;
+	unsigned int nearest_deadline = 0;
+	u64 now = rq_clock_task(rq_of(cfs_rq_of(curr)));
+	
+	struct sched_entity *left = __pick_first_entity(cfs_rq);
+	struct sched_entity *se;
+
 	/* if the current task was selected based on srtime, 
 	 * and if the srtime guarentee is not met, rerun this task
 	 */
@@ -3219,17 +3230,6 @@ pick_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *curr)
 		}
 	}
 	
-	
-	struct task_struct *task;
-	struct sched_entity *next_srtime;
-	unsigned long delta_exec;
-	unsigned int percent_passed;
-	unsigned int nearest_deadline = 0;
-	u64 now = rq_clock_task(rq_of(cfs_rq_of(se)));
-	
-	struct sched_entity *left = __pick_first_entity(cfs_rq);
-	struct sched_entity *se;
-
 	/*
 	 * If curr is set we have to see if its left of the leftmost entity
 	 * still in the tree, provided there was anything in the tree at all.
