@@ -1,0 +1,211 @@
+diff --git a/linux-3.19/arch/x86/syscalls/syscall_64.tbl b/linux-3.19/arch/x86/syscalls/syscall_64.tbl
+index 8d656fb..99db159 100644
+--- a/linux-3.19/arch/x86/syscalls/syscall_64.tbl
++++ b/linux-3.19/arch/x86/syscalls/syscall_64.tbl
+@@ -329,6 +329,7 @@
+ 320	common	kexec_file_load		sys_kexec_file_load
+ 321	common	bpf			sys_bpf
+ 322	64	execveat		stub_execveat
++323	common	rtnice			sys_rtnice
+ 
+ #
+ # x32-specific system call numbers start at 512 to avoid cache impact
+diff --git a/linux-3.19/include/linux/sched.h b/linux-3.19/include/linux/sched.h
+index 8db31ef..ec9aac0 100644
+--- a/linux-3.19/include/linux/sched.h
++++ b/linux-3.19/include/linux/sched.h
+@@ -1188,6 +1188,7 @@ struct sched_entity {
+ 	/* Per-entity load-tracking */
+ 	struct sched_avg	avg;
+ #endif
++	unsigned long 		srtime;
+ };
+ 
+ struct sched_rt_entity {
+diff --git a/linux-3.19/include/linux/syscalls.h b/linux-3.19/include/linux/syscalls.h
+index 85893d7..9a27b0f 100644
+--- a/linux-3.19/include/linux/syscalls.h
++++ b/linux-3.19/include/linux/syscalls.h
+@@ -882,4 +882,6 @@ asmlinkage long sys_execveat(int dfd, const char __user *filename,
+ 			const char __user *const __user *argv,
+ 			const char __user *const __user *envp, int flags);
+ 
++asmlinkage long sys_rtnice(int input_pid, unsigned long srtime);
++
+ #endif
+diff --git a/linux-3.19/kernel/sched/fair.c b/linux-3.19/kernel/sched/fair.c
+index fe331fc..19335fc 100644
+--- a/linux-3.19/kernel/sched/fair.c
++++ b/linux-3.19/kernel/sched/fair.c
+@@ -547,12 +547,12 @@ struct sched_entity *__pick_first_entity(struct cfs_rq *cfs_rq)
+ }
+ 
+ static struct sched_entity *__pick_next_entity(struct sched_entity *se)
+-{
++{	
+ 	struct rb_node *next = rb_next(&se->run_node);
+-
++	
+ 	if (!next)
+ 		return NULL;
+-
++	
+ 	return rb_entry(next, struct sched_entity, run_node);
+ }
+ 
+@@ -712,6 +712,12 @@ static void update_curr(struct cfs_rq *cfs_rq)
+ 	curr->sum_exec_runtime += delta_exec;
+ 	schedstat_add(cfs_rq, exec_clock, delta_exec);
+ 
++	// -----------------SRTIME-------------
++	if(curr->srtime <= delta_exec){
++		curr->srtime = 0;
++	}else{
++		curr->srtime -= (unsigned long)delta_exec;
++	}
+ 	curr->vruntime += calc_delta_fair(delta_exec, curr);
+ 	update_min_vruntime(cfs_rq);
+ 
+@@ -3194,6 +3200,9 @@ set_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
+ static int
+ wakeup_preempt_entity(struct sched_entity *curr, struct sched_entity *se);
+ 
++
++#define SRTIME_THRESHOLD 0;
++
+ /*
+  * Pick the next process, keeping these things in mind, in this order:
+  * 1) keep things fair between processes/task groups
+@@ -3204,6 +3213,17 @@ wakeup_preempt_entity(struct sched_entity *curr, struct sched_entity *se);
+ static struct sched_entity *
+ pick_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *curr)
+ {
++	
++	/* if the current task was selected based on srtime, 
++	 * and if the srtime guarentee is not met, rerun this task
++	 */
++
++	// -----------------SRTIME-------------
++	struct task_struct *task;
++	struct sched_entity *next_srtime;
++
++//	u64 now = rq_clock_task(rq_of(cfs_rq));
++	
+ 	struct sched_entity *left = __pick_first_entity(cfs_rq);
+ 	struct sched_entity *se;
+ 
+@@ -3249,7 +3269,23 @@ pick_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *curr)
+ 
+ 	clear_buddies(cfs_rq, se);
+ 
+-	return se;
++
++	// -----------------SRTIME-------------
++	next_srtime = se;
++	// Select process based on srtime
++	for_each_process(task){
++		//if(task->se != NULL){
++			if(task->se.on_rq == 1){
++				if(task->se.srtime>0){					
++					if(task->se.srtime > next_srtime->srtime){
++						next_srtime = &(task->se);
++					}
++				}
++			}
++		//}
++	}
++	
++	return next_srtime;
+ }
+ 
+ static bool check_cfs_rq_runtime(struct cfs_rq *cfs_rq);
+@@ -3284,7 +3320,20 @@ entity_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr, int queued)
+ 	 * Update run-time statistics of the 'current'.
+ 	 */
+ 	update_curr(cfs_rq);
++	
++	/* Account for time slices given as srtime guarantee
++	 * If the process has srtime requirements
++	 * and timeslice is remaining, then redue the slices
++	 * also when all slices given, remove srtime requirement
++	 */
++	// if(curr->srtime>0){
++	// 	if(!--curr->timeslice){
++	// 		// remove srtime requirements as all timeslices given
++	// 		curr->srtime = 0;
++	// 	}
++	// }
+ 
++	
+ 	/*
+ 	 * Ensure that runnable average is periodically updated.
+ 	 */
+@@ -3886,7 +3935,7 @@ static void do_sched_cfs_slack_timer(struct cfs_bandwidth *cfs_b)
+ /*
+  * When a group wakes up we want to make sure that its quota is not already
+  * expired/exceeded, otherwise it may be allowed to steal additional ticks of
+- * runtime as update_curr() throttling can not not trigger until it's on-rq.
++ * runtime as () throttling can not not trigger until it's on-rq.
+  */
+ static void check_enqueue_throttle(struct cfs_rq *cfs_rq)
+ {
+diff --git a/linux-3.19/kernel/sys.c b/linux-3.19/kernel/sys.c
+index ea9c881..0f9ed99 100644
+--- a/linux-3.19/kernel/sys.c
++++ b/linux-3.19/kernel/sys.c
+@@ -120,6 +120,55 @@ int fs_overflowgid = DEFAULT_FS_OVERFLOWUID;
+ EXPORT_SYMBOL(fs_overflowuid);
+ EXPORT_SYMBOL(fs_overflowgid);
+ 
++
++// -----SYSCALL RTNICE------
++
++//#include "sched/sched.h"
++SYSCALL_DEFINE2(rtnice,int,input_pid,unsigned long,srtime)
++{
++	//TODO:  add check for process not in cfs_rq if needed
++	
++	struct pid *pid_struct;
++	struct task_struct *task;
++	//u64 now = 0;
++	pid_struct=find_get_pid(input_pid);
++	//int default_timeslice = 2000;
++	if(srtime > 1000000){
++		printk(KERN_ERR "too big srtime to assign\n");
++		return -1;
++	}
++
++	if(pid_struct==NULL)
++		return -ESRCH;	
++	else
++	{
++		task=pid_task(pid_struct,PIDTYPE_PID);
++		if(task==NULL)
++			return -ESRCH;
++		printk(KERN_ERR "found the process\n");
++		if(task->se.srtime > 0){
++			printk(KERN_ERR "already has srtime\n");
++			return -1;		// the task already has srtime assigned
++		}
++		task->se.srtime = srtime;
++		printk(KERN_ERR "assigned srtime\n");
++//		task->se.timeslice = default_timeslice;
++//		printk("assigned default time slice of %d units \n",default_timeslice);
++		//now = rq_clock_task( (task->se.cfs_rq->rq ));
++//		printk(KERN_ERR "current time_stamp now = %llu \n", now);
++//		task->se.time_stamp_srtime = now;
++//		printk(KERN_ERR "time_stamp assigned of %llu \n", now);
++		printk(KERN_ERR "%lu \n", task->se.srtime);
++	}
++	return 0;
++}
++
++
++
++
++
++
++
+ /*
+  * Returns true if current's euid is same as p's uid or euid,
+  * or has CAP_SYS_NICE to p's user_ns.
