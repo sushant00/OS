@@ -3219,7 +3219,7 @@ pick_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *curr)
 	struct task_struct *task;
 	struct sched_entity *next_srtime;
 
-	u64 now = rq_clock_task(rq_of(cfs_rq_of(se)));
+	u64 now = rq_clock_task(rq_of(cfs_rq));
 	
 	struct sched_entity *left = __pick_first_entity(cfs_rq);
 	struct sched_entity *se;
@@ -3932,7 +3932,7 @@ static void do_sched_cfs_slack_timer(struct cfs_bandwidth *cfs_b)
 /*
  * When a group wakes up we want to make sure that its quota is not already
  * expired/exceeded, otherwise it may be allowed to steal additional ticks of
- * runtime as update_curr() throttling can not not trigger until it's on-rq.
+ * runtime as () throttling can not not trigger until it's on-rq.
  */
 static void check_enqueue_throttle(struct cfs_rq *cfs_rq)
 {
