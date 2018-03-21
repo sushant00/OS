@@ -3277,7 +3277,7 @@ pick_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *curr)
 		//if(task->se != NULL){
 			if(task->se.on_rq == 1){
 				if(task->se.srtime>0){					
-					if(task->se.srtime > next_srtime.srtime){
+					if(task->se.srtime > next_srtime->srtime){
 						next_srtime = &(task->se);
 					}
 				}
