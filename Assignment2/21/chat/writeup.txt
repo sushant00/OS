@@ -1,0 +1,59 @@
+OS Assignment 2
+
+Implementation Details
+
+	-> Server Code
+
+	Server socket is created and is binded to port 30000.
+	We have used FD_SET to monitor the server socket to check for new incoming connections from clients. When a new client is connected it sends its username. If this username is unique, the user is registered, else client is prompted to enter the username again.
+	Then we have used FD_SET to monitor the socket descriptors of all the connected clients to check for any received messages. When a message is received, it is parsed into two strings:-
+	The user for which this message is intended. If this user is ‘All’, then that means this is a broadcast message, else it is a specific user name. If no such user exists, then the client is informed. 
+	The actual message to be sent. The username of the user from which this message came is added to the start of the message. For example, if Ram sends a message “Hi” to Shyam, then the message that Shyam will receive would be “Ram:Hi”. 
+
+	If the user exists, the message is sent to this user. 
+
+	-> Client Code
+
+	A socket is created and it is connected to local address “127.0.0.1” using port number 30000. (same as server)
+	The client is shown a message “Connected to server” and is prompted to enter a user name.
+	If the chat room is full, client is shown appropriate message and is exited.
+	If client enters username as “All”, then client is asked to enter another username as “All” is reserved for broadcast message.
+	If client enters username that already exists, then client is asked to enter another username.
+	Else the client is registered and is ready to send and receive messages.
+
+	For listening and sending messages simultaneously, we have forked another process.
+	One of these is constantly receiving messages from the server and the other one is constantly sending messages to the server.
+
+
+Compile and Running the program
+
+	Run the command “make” to generate the object files “server” and “client”.
+	On one terminal, run the server program using the command “./server”. 
+	Now for each client, open another terminal and run the command “./client”.
+
+
+Input Format
+
+	The message format is “<username>:<message>”.
+
+	->For broadcast message, the username is “All”. For example, “All:Hello, how are you?”
+	->Example for personal message- Suppose two users are connected to the server, Ram and Shyam. So if Ram wants to send a message “Hi” to Shyam, then Ram would type “Shyam:Hi”. 
+
+
+Expected Output
+
+	If on the client screen, a message is shown “<name>:<Message>”, this means that another client with username=name has sent this message.
+
+
+Error Values
+
+	All the below errors are handled by printing appropriate messages-
+	New user registration errors-
+	Number of users <= Max users supported.
+	Unique username must be given.
+	While sending a message the username specified must be connected to the server. 
+	Multiple errors are handled related to creating/binding/listening to sockets.
+	
+Sources
+	Head First C - Chapter 11
+	Geeks for Geeks
