@@ -3282,7 +3282,7 @@ pick_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *curr)
 					/*
 					select the process whose percent deadline has passed the highest
 					*/
-					if(percent_passed > nearest_deadline){
+					if(percent_passed >= nearest_deadline){
 						next_srtime = &(task->se);
 						nearest_deadline = percent_passed;
 					}
