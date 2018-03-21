@@ -713,8 +713,11 @@ static void update_curr(struct cfs_rq *cfs_rq)
 	schedstat_add(cfs_rq, exec_clock, delta_exec);
 
 	// -----------------SRTIME-------------
-	curr->srtime -= (unsigned long)delta_exec;
-
+	if(curr->srtime <= delta_exec){
+		curr->srtime = 0;
+	}else{
+		curr->srtime -= (unsigned long)delta_exec;
+	}
 	curr->vruntime += calc_delta_fair(delta_exec, curr);
 	update_min_vruntime(cfs_rq);
 
@@ -3219,7 +3222,7 @@ pick_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *curr)
 	struct task_struct *task;
 	struct sched_entity *next_srtime;
 
-	u64 now = rq_clock_task(rq_of(cfs_rq));
+//	u64 now = rq_clock_task(rq_of(cfs_rq));
 	
 	struct sched_entity *left = __pick_first_entity(cfs_rq);
 	struct sched_entity *se;
