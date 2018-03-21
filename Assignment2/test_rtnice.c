@@ -3,6 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #define rtnice 323
 
@@ -14,10 +15,12 @@ int main(int argc,char **argv)
 	int pid = fork();
 	if(pid==0){
 		//successfully forked: child process
-		
+		pid_t tmppid = getpid();
+		printf("pid %d\n", tmppid);
+		//long res = syscall(323, tmppid, 1000000);
 		clock_t startTime = clock();
 		
-		long loopSize = 5e6;
+		long loopSize = 2e9;
 		long loop = 0;
 		for(loop = 0; loop < loopSize; loop++){			
 		}
@@ -34,14 +37,15 @@ int main(int argc,char **argv)
 	}else{
 		//successfully forked: parent process
 		wait(0);
-
-		 long res=syscall(323,pid ,10000);
-		 printf("System call returned %ld\n",res);
-		 printf("Error: %s \n",strerror(errno));
+		pid_t tmp_pid = getpid();
+		printf("pid %d \n", tmp_pid);
+		long res=syscall(323,tmp_pid ,1000000);
+		 //printf("System call returned %ld\n",res);
+		 //printf("Error: %s \n",strerror(errno));
 
 		clock_t startTime = clock();
 		
-		long loopSize = 5e6;
+		long loopSize = 2e9;
 		long loop = 0;
 		for(loop = 0; loop < loopSize; loop++){			
 		}
