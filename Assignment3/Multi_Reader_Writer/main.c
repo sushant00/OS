@@ -3,16 +3,18 @@
 #include <semaphore.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <time.h>
 
 #define QUEUE_SIZE 4
 
 void *reader(void *);
 void *writer(void *);
 
+
 sem_t mutex;				// to change read count
 sem_t w_mutex;				// to alter the queue
-sem_t[QUEUE_SIZE] rw_mutex;	// to alter/read a particular index of queue
-int[QUEUE_SIZE] read_count; 
+sem_t rw_mutex[QUEUE_SIZE];	// to alter/read a particular index of queue
+int read_count[QUEUE_SIZE]; 
 
 
 //queue
@@ -20,30 +22,52 @@ int front;
 int rear;
 int size;
 int max_size;
-int[QUEUE_SIZE] arr;
+int arr[QUEUE_SIZE];
 
+
+typedef struct reader_args{
+	int id;
+	int index;
+} Reader_Args;
+
+typedef struct writer_args{
+	int id;
+	int whatToDo;
+	int msg;
+} Writer_Args;
 
 
 void *reader(void *args){
-	int id = (int)args;
 
-	int index = rand()%QUEUE_SIZE;	//choose a random index to read
-	printf("Reader%d attempting to read index %d\n", id, index);
+	Reader_Args *init = (Reader_Args *)args;
+	printf("Reader%d %d\n", init->id, init->index);
+
+	int id = init->id;
+	int index;
+	if(init->index == -1){
+		printf("Reader%d selecting randomly\n", id);
+		srand(time(0)+id);
+		index = rand()%QUEUE_SIZE;	//choose a random index to read
+	}else{
+		index = init->index;
+	}
+
+	printf(">>>Reader%d attempting to read index %d\n", id, index);
 
 	if(index < 0 || index >= QUEUE_SIZE)	{
-		fprintf(stderr, "Reader%d could not read: index %d out of range\n", id, index);
-		return -1;
+		printf("Reader%d could not read: index %d out of range\n", id, index);
 	}
 	if(size > index){	// a valid index to read
 		sem_wait(&mutex);
 		int ind = (front+index)%max_size;	// actual index in arr
 		read_count[ind]++;	
-		if(read_count == 1){
+		if(read_count[ind] == 1){
 			sem_wait(&rw_mutex[ind]);
 		}
 		sem_post(&mutex);
 
-		printf("Reader%d read '%d' from index %d\n", arr[ind], id, index);
+		sleep(2);
+		printf("Reader%d read '%d' from index %d\n", id, arr[ind], index);
 
 		sem_wait(&mutex);
 		read_count[ind]--;
@@ -53,55 +77,85 @@ void *reader(void *args){
 		sem_post(&mutex);
 
 	}else{
-		fprintf(stderr, "Reader%d could not read: index %d empty\n", id, index);
-		return -1;
+		printf("Reader%d could not read: index %d empty\n", id, index);
 	}
 }
 
 
 void *writer(void *args){
-	int id = (int)args;
+
+	Writer_Args *init = (Writer_Args *)args;
+	printf("Writer%d %d %d\n", init->id, init->whatToDo, init->msg);
+
+	int id = init->id;
+	int whatToDo, msg;
+	if(init->whatToDo == -1){
+		srand(time(0)+id);	
+		whatToDo = rand()%8;					// choose randomly what to do
+		if(whatToDo < 6){
+			whatToDo = 1;
+		}else{
+			whatToDo = 0;
+		}
+		msg = rand()%10000 + 10;				//write random msg (int from 10 to 10009)
+	}else{
+		whatToDo = init->whatToDo;
+		msg = init->msg;
+	}
+	
+
 
 	sem_wait(&w_mutex);			// now no one else can write
+	printf("Writer%d got w_mutex\n", id);
 
-	int whatToDo = rand()%2;	// choose randomly what to do
 
-	if(whatToDo == 0){			// '0' so attempt enqueue
+	if(whatToDo == 1){			// attempt enqueue
 
-		msg = rand()%10000 + 10;				//write random msg (int from 10 to 10009)
-		printf("Writer%d attempting to enqueue %d\n", id, msg);
+		printf(">>>Writer%d attempting to enqueue %d\n", id, msg);
 
 		if(size == max_size){
-			fprintf(stderr, "Writer%d queue is full, not enqueued: %d\n", id, msg);
+			printf("Writer%d queue is full, not enqueued: %d\n", id, msg);
 		}else{
+			printf("Writer%d attempting to lock rw_mutex%d \n", id, (rear+1)%max_size);
 			sem_wait(&rw_mutex[(rear+1)%max_size]);	//lock this index
-			
+			printf("Writer%d acquired lock rw_mutex%d \n", id, (rear+1)%max_size);
+
 			rear = (rear+1)%max_size;
 			arr[rear] = msg;
 			size++;
+			sleep(3);
 			printf("Writer%d enqueued to queue: %d\n", id, msg);
 
+			printf("Writer%d released lock rw_mutex%d \n", id, rear);
 			sem_post(&rw_mutex[rear]);
 		}
 	}else{						//attempt dequeue
 
-		printf("Writer%d attempting to dequeue \n", id);
-
+		printf(">>>Writer%d attempting to dequeue \n", id);
+		printf("Writer%d: queue size %d\n",id, size);
 		if(size == 0){
-				fprintf(stderr, "Writer%d queue is empty, not dequeued: %s\n", id, msg);
+				printf("Writer%d queue is empty, not dequeued: %d\n", id, msg);
 		}else{
+			printf("Writer%d waiting\n", id, msg);
+
+			printf("Writer%d attempt to lock rw_mutex%d \n", id, front);
 			sem_wait(&rw_mutex[front]);	//lock this index
-			
+			printf("Writer%d acquired lock rw_mutex%d \n", id, front);
+
 			int tmp = front;
 			front = (front+1)%max_size;
 			size--;
+			sleep(3);
 			printf("Writer%d dequeued from queue: %d\n", id, arr[tmp]);
 
+			printf("Writer%d released lock rw_mutex%d \n", id, tmp);
 			sem_post(&rw_mutex[tmp]);
 		}
 	}
+	printf("Writer%d released w_mutex\n", id);
 	sem_post(&w_mutex);
 }
+
 
 
 int main(){
@@ -120,18 +174,17 @@ int main(){
 	//init queue
 	max_size = QUEUE_SIZE;
 	front = 0;
-	rear = 0;
+	rear = QUEUE_SIZE-1;
 	size = 0;
 	for(int i = 0; i < QUEUE_SIZE; i++){
 		arr[i] = 0;
 	}
-
 	//init random generator
-	time_t t;
-	srand((unsigned) time(&t));
+	srand(time(0));
 
 	int num_threads;
-	scanf("enter number of threads to spawn \n", &num_threads);
+	printf("enter number of threads to spawn \n");
+	scanf("%d", &num_threads);
 
 	pthread_t threads[num_threads];
 
@@ -140,20 +193,25 @@ int main(){
 		int whoAmI = rand()%8;	//generate reader/writer randomly
 
 		//spawn writer: reader = 3:5 randomly
-		if(whoAmI < 3){			//spawn a writer if whoAmI<2
+		if(whoAmI > 4){			//spawn a writer
 			printf("Spawned Writer%d\n", i);
-			pthread_create(&thread_id[i], NULL, writer, (void *)(i));
+			Writer_Args *tmp = malloc(sizeof(Writer_Args));
+			tmp->id = i; tmp->whatToDo = -1; tmp->msg = -1;
+			pthread_create(&threads[i], NULL, writer, (void *)(tmp));
 
-		}else{					//spawn a reader if whoAmI>=2
+		}else{					//spawn a reader
 			printf("Spawned Reader%d\n", i);
-			pthread_create(&thread_id[i], NULL, reader, (void *)(i));
+			Reader_Args *tmp = malloc(sizeof(Reader_Args));
+			tmp->id = i; tmp->index = -1;
+			pthread_create(&threads[i], NULL, reader, (void *)(tmp));
 		}
 
 	}
-	for(int i = 0; i<num_thread; i++){
-		pthread_join(thread_id[i], NULL);
+	for(int i = 0; i<num_threads; i++){
+		pthread_join(threads[i], NULL);
 	}
 
+	printf("\n\nthreads joined\n");
 
 	//destroy mutexes
 	sem_destroy(&mutex);
@@ -161,4 +219,6 @@ int main(){
 	for(int i = 0; i < QUEUE_SIZE; i++){
 		sem_destroy(&rw_mutex[i]);
 	}
+	printf("semaphores destroyed\n");
+
 }
