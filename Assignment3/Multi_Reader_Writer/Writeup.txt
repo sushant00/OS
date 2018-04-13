@@ -1,0 +1,47 @@
+OS ASSIGNMENT 3  Multiple Reader Writer with Synchronization  
+
+Nilay Sanghvi 			2016063
+Sushant Kumar Singh 	2016103
+
+main.c: This solves a simple reader writer concurrency problems
+
+
+Description:
+	
+	logical implementation:
+		- several mutexes are created 
+		- multiple readers can read an index (of queue)
+		- read_count is maintained for each index, when first reader comes it acquires rw_lock on that index so that no writer can attempt writing there or no reader can dequeue from there, similary the last reader before leaving that index releases the rw_lock for that index
+		- a reader trying to dequeue acquires lock on whole queue, such that no other writer/ reader can attempt enqueue/dequeue. Further it acquires rw_lock so that no one is reading the index being dequeued
+		- a writer trying to enqueue acquires lock on whole queue, such that no other writer/ reader can attempt enqueue/dequeue. Further it acquires rw_lock so that no one attempts reading the index being enqueued
+
+
+	Program flow:
+		- gets the user input of number of threads to spawn
+		- generates randomly reader/ writer corresponding to each thread
+		- each reader randomly chooses to dequeue/ read a random index
+		- each writer enqueue a random msg (integer from 10 to 10009)
+		- each reader/writer perform their desired action concurrently such that no race condition/deadlock occur
+
+
+
+Compilation and Testing:
+	type the following on terminal
+		make
+		make run
+
+User Inputs:
+	user needs to enter the total number of threads (int>0) to spawn for reader and writer
+
+Expected Output:
+	each reader/writer prints:
+	-what it is trying to do (e.g. read, enqueue , dequeue)
+	-which locks it has acquired
+	-what the reader/writer did
+	-which locks it released
+
+Error:
+	error msgs are printed correspondingly
+	-Queue Full: no writer can write to any queue already full
+	-Queue Empty: no reader can dequeue from already empty queue
+	-Index Empty: no reader can read from index of queue currently empty

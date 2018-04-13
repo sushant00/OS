@@ -14,7 +14,7 @@ void *writer(void *);
 sem_t rc_mutex[QUEUE_SIZE];				// to change read count
 sem_t w_mutex;				// to alter the queue
 sem_t rw_mutex[QUEUE_SIZE];	// to alter/read a particular index of queue
-sem_t read_count[QUEUE_SIZE]; 
+int read_count[QUEUE_SIZE]; 
 
 
 //queue
@@ -79,17 +79,17 @@ void *reader(void *args){
 			if(read_count[ind] == 1){
 				sem_wait(&rw_mutex[ind]);
 			}
-			sem_post(&mutex);
+			sem_post(&rc_mutex[ind]);
 
 			sleep(2);
 			printf("Reader%d read '%d' from index %d\n", id, arr[ind], index);
 
-			sem_wait(&mutex);
+			sem_wait(&rc_mutex[ind]);
 			read_count[ind]--;
 			if(read_count[ind] == 0){
 				sem_post(&rw_mutex[ind]);
 			}
-			sem_post(&rc_mutex[]ind);
+			sem_post(&rc_mutex[ind]);
 
 		}else{
 			printf("Reader%d could not read: index %d empty\n", id, index);
@@ -179,14 +179,11 @@ void *writer(void *args){
 int main(){
 
 	//init mutexes
-	sem_init(&mutex, 0, 1);
 	sem_init(&w_mutex, 0, 1);
 	for(int i = 0; i < QUEUE_SIZE; i++){
 		sem_init(&rw_mutex[i], 0, 1);
-	}
-
-	for(int i = 0; i < QUEUE_SIZE; i++){
 		read_count[i] = 0;
+		sem_init(&rc_mutex[i], 0, 1);
 	}
 
 	//init queue
@@ -232,10 +229,10 @@ int main(){
 	printf("\n\nthreads joined\n");
 
 	//destroy mutexes
-	sem_destroy(&mutex);
 	sem_destroy(&w_mutex);
 	for(int i = 0; i < QUEUE_SIZE; i++){
 		sem_destroy(&rw_mutex[i]);
+		sem_destroy(&rc_mutex[i]);	
 	}
 	printf("semaphores destroyed\n");
 
