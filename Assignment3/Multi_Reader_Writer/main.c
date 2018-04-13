@@ -11,10 +11,10 @@ void *reader(void *);
 void *writer(void *);
 
 
-sem_t mutex;				// to change read count
+sem_t rc_mutex[QUEUE_SIZE];				// to change read count
 sem_t w_mutex;				// to alter the queue
 sem_t rw_mutex[QUEUE_SIZE];	// to alter/read a particular index of queue
-int read_count[QUEUE_SIZE]; 
+sem_t read_count[QUEUE_SIZE]; 
 
 
 //queue
@@ -71,8 +71,10 @@ void *reader(void *args){
 			printf("Reader%d could not read: index %d out of range\n", id, index);
 		}
 		if(size > index){	// a valid index to read
-			sem_wait(&mutex);
 			int ind = (front+index)%max_size;	// actual index in arr
+			
+			sem_wait(&rc_mutex[ind]);
+
 			read_count[ind]++;	
 			if(read_count[ind] == 1){
 				sem_wait(&rw_mutex[ind]);
@@ -87,7 +89,7 @@ void *reader(void *args){
 			if(read_count[ind] == 0){
 				sem_post(&rw_mutex[ind]);
 			}
-			sem_post(&mutex);
+			sem_post(&rc_mutex[]ind);
 
 		}else{
 			printf("Reader%d could not read: index %d empty\n", id, index);
