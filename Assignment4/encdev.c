@@ -1,14 +1,21 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/uaccess.h>
+#include <linux/fs.h>
 
 static int encdev_init(void);
 static void encdev_exit(void);
+static int encdev_open(struct inode *inodep, struct file *filep);
+static ssize_t encdev_read(struct file *filep, char *buff, size_t len, loff_t *offset);
+static ssize_t encdev_write(struct file *filep, const char *buff, size_t len, loff_t *offset);
+static int encdev_close(struct inode *inodep, struct file *filep);
+
 
 
 
 
 static int device_file_major = 0;
-static const char device_name = "encdev";
+static const char device_name[] = "encdev";
 
 
 static int firstWrite;
@@ -22,7 +29,7 @@ static struct file_operations encdev_fops = {
 	.open = encdev_open,
 	.read = encdev_read,
 	.write = encdev_write,
-	.release = encdev_release;
+	.release = encdev_close,
 };
 
 static int encdev_init(void){
@@ -51,7 +58,7 @@ static void encdev_exit(void){
 }
 
 
-static int encdev_open(struct inode	*inodep, struct file *filep){
+static int encdev_open(struct inode *inodep, struct file *filep){
 	printk("encdev:	opened");
 	return 0;
 }
@@ -63,7 +70,7 @@ static ssize_t encdev_read(struct file *filep, char *buff, size_t len, loff_t *o
 		printk("encdev: nothing to read\n");
 		return -1;
 	}
-	if(numBytes = copy_to_user(buff, encMsg[readPtr], 16)==0){
+	if(numBytes = copy_to_user(buff, &encMsg[readPtr], 16)==0){
 		printk("encdev: written msg\n");
 	}else{
 		printk("encdev: write unsuccessful, %d bytes not written\n", numBytes);
@@ -92,7 +99,7 @@ static ssize_t encdev_write(struct file *filep, const char *buff, size_t len, lo
 		writePtr = 0;
 		readPtr = 0;
 		return 16;
-	}elseif(writePtr >= 256){
+	}else if(writePtr >= 256){
 		printk("encdev: Msg buffer full\n");
 		return -1;
 	}else{//handle eof, errors
