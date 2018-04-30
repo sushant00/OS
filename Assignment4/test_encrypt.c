@@ -14,7 +14,7 @@ int main(int argc, char *argv[]){
 		return -1;
 	}
 	//write the random key
-	int fd1 = open("/dev/urandom", O_RDONLY){
+	int fd1 = open("/dev/urandom", O_RDONLY);
 	if(fd1 < 0){
 		printf("error opening /dev/urandom\n");
 		return -1;
@@ -38,7 +38,7 @@ int main(int argc, char *argv[]){
 	while( (c = fgetc(msg)) != EOF ){
 		buffer[count++] = (char)c;
 		if(count==16){
-			r = write(fd, buffer, 16)
+			r = write(fd, buffer, 16);
 			if(r<0){
 				printf("write unsuccessful\n");
 			}
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]){
 	}
 	fprintf(msg, "%s", key);	
 	fclose(msg);
-	msg = fopen("encryped.txt", "w" );
+	msg = fopen("encrypted.txt", "w" );
 	if(msg==0){
 		return -1;
 	}
