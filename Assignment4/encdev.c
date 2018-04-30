@@ -101,7 +101,7 @@ static ssize_t encdev_write(struct file *filep, const char *buff, size_t len, lo
 		writePtr = 0;
 		readPtr = 0;
 		return 16;
-	}else if(writePtr >= 256){
+	}else if(writePtr >= 512){
 		printk("encdev: Msg buffer full\n");
 		return -1;
 	}else{//handle eof, errors

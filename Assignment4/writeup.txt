@@ -1,0 +1,57 @@
+2016063
+2016103
+
+OS ASSIGNMENT 4  
+
+Nilay Sanghvi 			2016063
+Sushant Kumar Singh 	2016103
+
+
+
+Description:
+	
+	logical implementation:
+		encdev:
+			-first call to write reads the key
+			-further calls to write read 16 bytes from user space, xor them with key and store them in char array
+			- key is updated after each xor
+			-read call writes 16 bytes at a time to user space
+
+		decdev:
+
+
+		testing: generates a random 16byte key using /dev/urandom and writes to encryptor
+		the file passed as argument is read and encrypted and written to "encrypted.txt"
+		finally encrypted.txt, key.txt are used by test_decryptor to decrypt the msg in similar way and write to 'decrypted.txt'
+
+
+
+
+Compilation and Testing:
+	// This compiles and loads the module
+	make
+	sudo make install
+	mknod /dev/encdev c 247 0
+
+	//test encrypter
+	gcc test_encryptor.c -o test_e
+	sudo ./test_e.out <filename>
+
+	//test decryptor
+	gcc test_decryptor.c -o test_d
+	sudo ./test_d <filename>
+
+
+User Inputs:
+	filename:	file to be encrypted/ decrypted
+
+Expected Output:
+	-test_encryptor: encrypted file written to "encrypted.txt", key to "key.txt"
+	-test_decryptor: decrypted file written to "decrypted.txt"
+	-error msgs are printed by test files
+
+Error:
+	error msgs are printed correspondingly
+	-msg buffer full: after 512 bytes no encryption is done
+	-error registering
+	-nothing to read: when encdev has nothing in buffer
