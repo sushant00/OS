@@ -71,7 +71,7 @@ static ssize_t encdev_read(struct file *filep, char *buff, size_t len, loff_t *o
 		printk("encdev: nothing to read\n");
 		return 0;
 	}
-	if(numBytes = copy_to_user(buff, &encMsg[readPtr], 16)==0){
+	if((numBytes = copy_to_user(buff, &encMsg[readPtr], 16))==0){
 		printk("encdev: written msg %s\n", &encMsg[readPtr]);
 	}else{
 		printk("encdev: write unsuccessful, %d bytes not written\n", numBytes);
@@ -101,9 +101,9 @@ static ssize_t encdev_write(struct file *filep, const char *buff, size_t len, lo
 		writePtr = 0;
 		readPtr = 0;
 		return 16;
-	}else if(writePtr >= 256){
+	}else if(writePtr >= 512){
 		printk("encdev: Msg buffer full\n");
-		return -1;
+		return 0;
 	}else{//handle eof, errors
 		if(numBytes = copy_from_user(buffer, buff, 16)==0){
 			printk("encdev: read msg %s\n", buffer);
