@@ -26,6 +26,7 @@ static char curKey[16];
 static char buffer[16];
 
 static struct file_operations encdev_fops = {
+	.owner = THIS_MODULE,
 	.open = encdev_open,
 	.read = encdev_read,
 	.write = encdev_write,
@@ -49,17 +50,17 @@ static int encdev_init(void){
 }
 
 static void encdev_exit(void){
-	printk("exiting my module");
+	printk("exiting my module\n");
 	if(device_file_major != 0){
 		unregister_chrdev(device_file_major, device_name);	//unregister encdev
-		printk("encdev: unregistered");
+		printk("encdev: unregistered\n");
 	}
 	return;
 }
 
 
 static int encdev_open(struct inode *inodep, struct file *filep){
-	printk("encdev:	opened");
+	printk("encdev:	opened\n");
 	return 0;
 }
 
@@ -68,13 +69,13 @@ static ssize_t encdev_read(struct file *filep, char *buff, size_t len, loff_t *o
 	int numBytes = 0;
 	if(readPtr>=writePtr){
 		printk("encdev: nothing to read\n");
-		return -1;
+		return 0;
 	}
 	if(numBytes = copy_to_user(buff, &encMsg[readPtr], 16)==0){
-		printk("encdev: written msg\n");
+		printk("encdev: written msg %s\n", &encMsg[readPtr]);
 	}else{
 		printk("encdev: write unsuccessful, %d bytes not written\n", numBytes);
-		return -1;
+		return 0;
 	}
 	if(writePtr-readPtr < 16){
 		numBytes = writePtr - readPtr;
@@ -87,13 +88,14 @@ static ssize_t encdev_read(struct file *filep, char *buff, size_t len, loff_t *o
 
 
 static ssize_t encdev_write(struct file *filep, const char *buff, size_t len, loff_t *offset){
+	int i = 0;
 	int numBytes = 0;
 	if(!firstWrite){
 		if(numBytes = copy_from_user(curKey, buff, 16)==0){
-			printk("encdev: read msg\n");
+			printk("encdev: read msg %s\n", curKey);
 		}else{
 			printk("encdev: read unsuccessful, %d bytes not written\n", numBytes);
-			return -1;
+			return 0;
 		}
 		firstWrite = 1;
 		writePtr = 0;
@@ -103,18 +105,20 @@ static ssize_t encdev_write(struct file *filep, const char *buff, size_t len, lo
 		printk("encdev: Msg buffer full\n");
 		return -1;
 	}else{//handle eof, errors
-		if(numBytes = copy_from_user(curKey, buff, 16)==0){
-			printk("encdev: read msg\n");
+		if(numBytes = copy_from_user(buffer, buff, 16)==0){
+			printk("encdev: read msg %s\n", buffer);
 		}else{
 			printk("encdev: read unsuccessful, %d bytes not written\n", numBytes);
-			return -1;
-		}		int i = 0;
+			return 0;
+		}	
+		i = 0;
 		for(i = 0; i<16; i++){
 			if(buffer[i] == '\0'){
 				encMsg[writePtr] = '\0';
 				break;
 			}else{
 				encMsg[writePtr] = curKey[i] ^ buffer[i];
+				printk("encdev: byte written %c xor %c = %c\n", curKey[i], buffer[i], encMsg[writePtr]);	
 			}
 			curKey[i] = encMsg[writePtr];
 			writePtr++;
@@ -128,7 +132,7 @@ static ssize_t encdev_write(struct file *filep, const char *buff, size_t len, lo
 }
 
 static int encdev_close(struct inode *inodep, struct file *filep){
-	printk("encdev:	closed");
+	printk("encdev:	closed\n");
 	return 0;
 }
 
