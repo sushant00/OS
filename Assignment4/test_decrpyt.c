@@ -53,11 +53,10 @@ int main(int argc, char *argv[]){
 	if(msg==0){
 		return -1;
 	}
-	char m[17];
-	int ret = read(fd,m,16);
-   	printf("The received message is: %s okay?\n",m);
 	while(read(fd, buffer, 16)!=-1){	
 		fprintf(msg,"%s", buffer);	
 	}
+	fclose(msg);
+	close(fd);
 	return 0;
 }

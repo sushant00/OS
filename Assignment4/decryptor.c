@@ -9,7 +9,6 @@ int wp=0;
 int flag=0;
 char key[16]={0};
 char buff[16]={0};
-char decrpyt[16]={0}; 
 ssize_t my_read (struct file *myfile, char __user *buffer, size_t length, loff_t *offset)
 {
 	printk(KERN_ALERT "Inside the %s function",__FUNCTION__);
@@ -43,7 +42,7 @@ ssize_t my_write (struct file *myfile, const char __user *buffer, size_t length,
 			{
 				data[wp]=key[i] ^ buff[i];
 			}	
-			key[i]=data[wp];
+			key[i]=buff[i];
 			wp++;
 		}
 		return length;
@@ -65,6 +64,7 @@ int my_close (struct inode *myinode, struct file *myfile)
 	printk(KERN_ALERT "Inside the %s function",__FUNCTION__);
 	rp=0;
 	wp=0;
+	flag=0;
 	return 0;
 }
 
