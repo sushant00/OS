@@ -45,7 +45,7 @@ static int encdev_init(void){
 		device_file_major = r;
 		printk("encdev: registered, major_num %d\n", r);
 	}
-	firstWrite = 0;		//first read not done
+
 	return 0;
 }
 
@@ -60,6 +60,9 @@ static void encdev_exit(void){
 
 
 static int encdev_open(struct inode *inodep, struct file *filep){
+	firstWrite = 0;
+	readPtr = 0;
+	writePtr = 0;
 	printk("encdev:	opened\n");
 	return 0;
 }
@@ -92,7 +95,7 @@ static ssize_t encdev_write(struct file *filep, const char *buff, size_t len, lo
 	int numBytes = 0;
 	if(!firstWrite){
 		if(numBytes = copy_from_user(curKey, buff, 16)==0){
-			printk("encdev: read msg %s\n", curKey);
+			printk("encdev: read key %s\n", curKey);
 		}else{
 			printk("encdev: read unsuccessful, %d bytes not written\n", numBytes);
 			return 0;
@@ -132,6 +135,8 @@ static ssize_t encdev_write(struct file *filep, const char *buff, size_t len, lo
 }
 
 static int encdev_close(struct inode *inodep, struct file *filep){
+	writePtr = 0;
+	readPtr = 0;
 	printk("encdev:	closed\n");
 	return 0;
 }

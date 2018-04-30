@@ -28,6 +28,10 @@ int main(int argc, char *argv[]){
 	}
 	printf("size of key %d\n", r);
 	fclose(fd1);
+//	int i =0;
+//	for( i = 0; i<16; i++){
+//		key[i] = '2';
+//	}
 	key[16] = '\0';
 //	getrandom(key, 16, GRND_NONBLOCK);
 	printf("random key:%s:\n", key);
@@ -39,11 +43,12 @@ int main(int argc, char *argv[]){
 	}
 
 	int c, count=0;
-	char buffer[16];
+	char buffer[17];
 	while( (c = fgetc(msg)) != EOF ){
 		printf("read character %c, %d\n",(char)c, (char)c );
 		buffer[count++] = (char)c;
 		if(count==16){
+			buffer[16] = '\0';
 			r = write(fd, buffer, 16);
 			if(r<0){
 				printf("write unsuccessful\n");
@@ -69,12 +74,16 @@ int main(int argc, char *argv[]){
 	fclose(msg);
 	msg = fopen("encrypted.txt", "w" );
 	if(msg==0){
+		printf("could not open encrypted.txt\n");
 		return -1;
 	}
 	
 	while(read(fd, buffer, 16)!=0){	
 		fwrite(buffer, 1, 16, msg);	
-		//printf("%s\n",cipher);
+		printf("%s\n",buffer);
 	}
+	printf("done\n");
+	fclose(msg);
+	close(fd);
 	return 0;
 }
