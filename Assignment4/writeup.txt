@@ -31,7 +31,8 @@ Compilation and Testing:
 	// This compiles and loads the module
 	make
 	sudo make install
-	mknod /dev/encdev c 247 0
+	mknod -m 666 /dev/encdev c 247 0
+	mknod -m 666 /dev/decryptor c 777 0	
 
 	//test encrypter
 	gcc test_encryptor.c -o test_e
