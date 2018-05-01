@@ -31,7 +31,7 @@ int main(int argc, char *argv[]){
 	}
 
 	int c, count=0;
-	char buffer[16];
+	char buffer[17];
 	while( (c = fgetc(msg)) != EOF ){
 		buffer[count++] = (char)c;
 		if(count==16){
@@ -54,6 +54,7 @@ int main(int argc, char *argv[]){
 		return -1;
 	}
 	while(read(fd, buffer, 16)!=-1){	
+		buffer[16]='\0';
 		fprintf(msg,"%s", buffer);	
 	}
 	fclose(msg);
